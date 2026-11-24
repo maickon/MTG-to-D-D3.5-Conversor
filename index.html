@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTG para D&D 3.5 — Gerador de Fichas</title>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg: #101319;
+  --panel: #191f29;
+  --panel-2: #222a36;
+  --text: #edf1f7;
+  --muted: #aab4c2;
+  --line: #394454;
+  --accent: #d6a84b;
+  --accent-dark: #9e7629;
+  --danger: #d76b6b;
+  --paper: #f4f0e7;
+  --ink: #25231f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif;
+}
+header {
+  padding: 26px 20px;
+  border-bottom: 1px solid var(--line);
+  background: #151a22;
+}
+header .inner, main { max-width: 1280px; margin: 0 auto; }
+h1 { margin: 0 0 5px; font-size: clamp(1.5rem, 3vw, 2.2rem); }
+header p { margin: 0; color: var(--muted); }
+main {
+  display: grid;
+  grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+  gap: 22px;
+  padding: 22px 16px 48px;
+  align-items: start;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px;
+}
+.panel h2 { margin: 0 0 16px; font-size: 1.15rem; }
+.section-title {
+  margin: 20px 0 10px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--line);
+  color: var(--accent);
+  font-size: .92rem;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+}
+.section-title:first-of-type { margin-top: 0; }
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+.field { min-width: 0; }
+.field.full { grid-column: 1 / -1; }
+label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--muted);
+  font-size: .82rem;
+  font-weight: 650;
+}
+input, select, textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  outline: none;
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+}
+textarea { min-height: 82px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+.hint { margin: 5px 0 0; color: var(--muted); font-size: .75rem; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 18px;
+}
+button {
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--panel-2);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 650;
+}
+button.primary { background: var(--accent); border-color: var(--accent); color: #211b10; }
+button:hover { filter: brightness(1.1); }
+button:disabled { opacity: .5; cursor: wait; }
+.preview-panel { position: sticky; top: 14px; }
+.preview-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.preview-heading h2 { margin: 0; }
+#status { min-height: 20px; margin-top: 10px; color: var(--muted); font-size: .82rem; }
+
+/* Printable stat block */
+#statBlock {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 25px;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid #c9c0ae;
+  box-shadow: 0 8px 28px #0005;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.stat-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 18px;
+  align-items: start;
+}
+.stat-kicker {
+  color: #725b35;
+  font: 700 .7rem/1.3 system-ui, sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.stat-name {
+  margin: 3px 0 2px;
+  font-size: clamp(1.65rem, 4vw, 2.25rem);
+  line-height: 1.05;
+  color: #211d17;
+}
+.stat-subtitle { margin: 5px 0 0; color: #625b50; font: italic .92rem system-ui, sans-serif; }
+.stat-image {
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
+  border: 2px solid #b7a98f;
+  background: #ded6c7;
+}
+.stat-rule { height: 3px; margin: 14px 0 10px; background: #8d3028; border: 0; }
+.stat-line { margin: 5px 0; font-size: .94rem; }
+.stat-line strong { color: #6f2924; }
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px 18px;
+  margin: 10px 0;
+}
+.stat-box {
+  padding: 7px 9px;
+  border-left: 3px solid #a23c31;
+  background: #e9e2d5;
+  font: .9rem system-ui, sans-serif;
+}
+.stat-box b { display: block; color: #6f2924; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+.stat-abilities {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+  margin: 12px 0;
+  text-align: center;
+}
+.ability {
+  padding: 7px 2px;
+  border: 1px solid #c9bda8;
+  background: #eee8dc;
+}
+.ability b { display: block; font: 700 .68rem system-ui, sans-serif; color: #6f2924; }
+.ability span { display: block; font: 700 1.05rem system-ui, sans-serif; }
+.ability small { display: block; color: #655c50; font: .72rem system-ui, sans-serif; }
+.stat-section { margin-top: 12px; }
+.stat-section h3 {
+  margin: 0 0 5px;
+  padding-bottom: 3px;
+  border-bottom: 1px solid #b9aa91;
+  color: #7b2c25;
+  font: 700 .9rem system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.stat-section p { margin: 4px 0; font-size: .94rem; }
+.stat-footer {
+  margin-top: 16px;
+  padding-top: 7px;
+  border-top: 1px solid #c8bba6;
+  color: #766d60;
+  font: .7rem system-ui, sans-serif;
+  text-align: right;
+}
+@media (max-width: 900px) {
+  main { grid-template-columns: 1fr; }
+  .preview-panel { position: static; }
+}
+@media (max-width: 520px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .field.full { grid-column: auto; }
+  #statBlock { padding: 15px; }
+  .stat-top { grid-template-columns: 1fr 112px; gap: 10px; }
+  .stat-image { height: 100px; }
+  .stat-grid { grid-template-columns: 1fr; }
+  .stat-abilities { grid-template-columns: repeat(3, 1fr); }
+}
+@media print {
+  body { background: white; }
+  header, .form-panel, .preview-heading, #status { display: none !important; }
+  main { display: block; padding: 0; }
+  .preview-panel, .panel { border: 0; padding: 0; background: white; }
+  #statBlock { max-width: none; box-shadow: none; border: 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="inner">
+    <h1>Gerador de Criaturas — Magic para D&D 3.5</h1>
+    <p>Converta os dados de uma carta de criatura em uma ficha-base de monstro.</p>
+  </div>
+</header>
+
+<main>
+  <section class="panel form-panel">
+    <h2>Dados da criatura</h2>
+    <form id="creatureForm">
+      <div class="section-title">Informações da carta</div>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="creatureName">Nome da criatura</label>
+          <input id="creatureName" value="Dragão das Chamas Antigas" required>
+        </div>
+        <div class="field">
+          <label for="power">Poder</label>
+          <input id="power" type="number" min="0" max="30" value="6" required>
+        </div>
+        <div class="field">
+          <label for="toughness">Resistência</label>
+          <input id="toughness" type="number" min="0" max="30" value="6" required>
+        </div>
+        <div class="field">
+          <label for="manaCost">Custo total de mana</label>
+          <input id="manaCost" type="number" min="0" max="30" value="6">
+        </div>
+        <div class="field">
+          <label for="rarity">Raridade</label>
+          <select id="rarity">
+            <option value="common">Comum</option>
+            <option value="uncommon">Incomum</option>
+            <option value="rare">Rara</option>
+            <option value="mythic" selected>Mítica rara</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="colors">Cores</label>
+          <select id="colors">
+            <option value="white">Branco</option>
+            <option value="blue">Azul</option>
+            <option value="black">Preto</option>
+            <option value="red" selected>Vermelho</option>
+            <option value="green">Verde</option>
+            <option value="multicolor">Multicolorida</option>
+            <option value="colorless">Incolor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="cardType">Tipo impresso na carta</label>
+          <input id="cardType" value="Dragão">
+        </div>
+        <div class="field full">
+          <label for="cardAbilities">Habilidades e texto de regras</label>
+          <textarea id="cardAbilities">Voar. Quando entra no campo de batalha, causa 3 pontos de dano a cada oponente. Sempre que atacar, pode causar 2 pontos de dano a uma criatura adversária.</textarea>
+        </div>
+        <div class="field full">
+          <label for="imageUrl">URL da imagem (opcional)</label>
+          <input id="imageUrl" type="url" placeholder="https://example.com/creature-art.jpg">
+          <p class="hint">Use uma imagem pública acessível pelo navegador. Algumas imagens externas podem bloquear exportação por CORS.</p>
+        </div>
+      </div>
+
+      <div class="section-title">Informações adicionais</div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="creatureType">Tipo em D&D</label>
+          <select id="creatureType">
+            <option value="humanoid">Humanoide</option>
+            <option value="animal">Animal</option>
+            <option value="magicalBeast">Besta mágica</option>
+            <option value="dragon" selected>Dragão</option>
+            <option value="undead">Morto-vivo</option>
+            <option value="construct">Constructo</option>
+            <option value="elemental">Elemental</option>
+            <option value="plant">Planta</option>
+            <option value="fey">Fada</option>
+            <option value="outsider">Extra-planar</option>
+            <option value="monstrous">Monstruoso</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="subtype">Subtipo</label>
+          <input id="subtype" value="Fogo">
+        </div>
+        <div class="field">
+          <label for="size">Tamanho</label>
+          <select id="size">
+            <option value="Fine">Mínimo</option>
+            <option value="Diminutive">Diminuto</option>
+            <option value="Tiny">Miúdo</option>
+            <option value="Small">Pequeno</option>
+            <option value="Medium" selected>Médio</option>
+            <option value="Large">Grande</option>
+            <option value="Huge">Enorme</option>
+            <option value="Gargantuan">Imenso</option>
+            <option value="Colossal">Colossal</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="movement">Locomoção</label>
+          <select id="movement">
+            <option value="ground" selected>Terrestre</option>
+            <option value="fly">Voador</option>
+            <option value="swim">Aquático</option>
+            <option value="burrow">Escavador</option>
+            <option value="climb">Escalador</option>
+            <option value="multiple">Múltiplas formas</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="profile">Perfil principal</label>
+          <select id="profile">
+            <option value="physical">Combatente físico</option>
+            <option value="agile">Ágil / predador</option>
+            <option value="arcane">Mágico / conjurador</option>
+            <option value="defensive">Defensivo</option>
+            <option value="spiritual">Espiritual</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="alignment">Tendência</label>
+          <select id="alignment">
+            <option>Sem tendência definida</option>
+            <option>Leal e bom</option>
+            <option>Neutro e bom</option>
+            <option>Caótico e bom</option>
+            <option>Leal e neutro</option>
+            <option selected>Neutro</option>
+            <option>Caótico e neutro</option>
+            <option>Leal e mau</option>
+            <option>Neutro e mau</option>
+            <option>Caótico e mau</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="primary" type="submit">Gerar ficha</button>
+        <button type="button" id="resetButton">Restaurar exemplo</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel preview-panel">
+    <div class="preview-heading">
+      <h2>Ficha gerada</h2>
+      <div class="actions" style="margin:0">
+        <button type="button" id="exportButton">Exportar PNG</button>
+        <button type="button" class="primary" id="shareButton">WhatsApp</button>
+      </div>
+    </div>
+
+    <article id="statBlock">
+      <div class="stat-top">
+        <div>
+          <div class="stat-kicker">D&D 3.5 · Criatura convertida de Magic</div>
+          <h2 class="stat-name" id="outName">Dragão das Chamas Antigas</h2>
+          <p class="stat-subtitle" id="outIdentity">Dragão Médio (Fogo), Neutro</p>
+        </div>
+        <img id="outImage" class="stat-image" alt="Imagem da criatura">
+      </div>
+      <hr class="stat-rule">
+      <p class="stat-line"><strong>Dados de Vida:</strong> <span id="outHD"></span></p>
+      <p class="stat-line"><strong>Pontos de Vida:</strong> <span id="outHP"></span></p>
+      <p class="stat-line"><strong>Iniciativa:</strong> <span id="outInit"></span></p>
+      <p class="stat-line"><strong>Deslocamento:</strong> <span id="outSpeed"></span></p>
+      <p class="stat-line"><strong>Classe de Armadura:</strong> <span id="outAC"></span></p>
+      <p class="stat-line"><strong>Ataque Base / Agarrar:</strong> <span id="outBAB"></span></p>
+      <p class="stat-line"><strong>Ataques:</strong> <span id="outAttacks"></span></p>
+      <p class="stat-line"><strong>Espaço / Alcance:</strong> <span id="outSpace"></span></p>
+      <p class="stat-line"><strong>Ataques Especiais:</strong> <span id="outSpecialAttacks"></span></p>
+      <p class="stat-line"><strong>Qualidades Especiais:</strong> <span id="outQualities"></span></p>
+      <p class="stat-line"><strong>Testes de Resistência:</strong> <span id="outSaves"></span></p>
+      <p class="stat-line"><strong>Habilidades:</strong> <span id="outAbilities"></span></p>
+      <p class="stat-line"><strong>ND:</strong> <span id="outCR"></span> <strong>· XP:</strong> <span id="outXP"></span></p>
+      <div class="stat-abilities" id="outAbilityScores"></div>
+      <div class="stat-grid">
+        <div class="stat-box"><b>Tipo de criatura</b><span id="outType"></span></div>
+        <div class="stat-box"><b>Raridade da carta</b><span id="outRarity"></span></div>
+        <div class="stat-box"><b>Custo de mana</b><span id="outMana"></span></div>
+        <div class="stat-box"><b>Poder / Resistência original</b><span id="outPT"></span></div>
+      </div>
+      <div class="stat-section">
+        <h3>Descrição das habilidades convertidas</h3>
+        <p id="outRules"></p>
+      </div>
+      <div class="stat-section">
+        <h3>Observações para o Mestre</h3>
+        <p id="outNotes">Ficha-base automática. Revise os valores e complemente talentos, perícias, idiomas, comportamento e demais características conforme a campanha.</p>
+      </div>
+      <div class="stat-footer">Ficha-base gerada por conversão não oficial de Magic: The Gathering para D&D 3.5.</div>
+    </article>
+    <div id="status" role="status"></div>
+  </section>
+</main>
+
+<script>
+const DEFAULT_IMAGE = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+  <rect width="640" height="420" fill="#ded6c7"/>
+  <path d="M0 330 L150 180 L250 290 L390 100 L640 330 V420 H0Z" fill="#b7a98f"/>
+  <circle cx="320" cy="170" r="65" fill="#8d3028" opacity=".85"/>
+  <path d="M220 270 Q320 80 420 270 Q360 230 320 300 Q280 230 220 270Z" fill="#6f2924"/>
+  <text x="320" y="375" text-anchor="middle" font-family="Georgia" font-size="24" fill="#51483b">CREATURE ART</text>
+</svg>`);
+
+const SIZE_DATA = {
+  Fine:       { label: "Mínimo", mod: 8, space: "15 cm", reach: "0 cm", str: -16, dex: 8, natural: -8, damage: "1" },
+  Diminutive: { label: "Diminuto", mod: 4, space: "30 cm", reach: "0 cm", str: -12, dex: 6, natural: -4, damage: "1d2" },
+  Tiny:       { label: "Miúdo", mod: 2, space: "75 cm", reach: "0 cm", str: -8, dex: 4, natural: -2, damage: "1d3" },
+  Small:      { label: "Pequeno", mod: 1, space: "1,5 m", reach: "1,5 m", str: -4, dex: 2, natural: -1, damage: "1d4" },
+  Medium:     { label: "Médio", mod: 0, space: "1,5 m", reach: "1,5 m", str: 0, dex: 0, natural: 0, damage: "1d6" },
+  Large:      { label: "Grande", mod: -1, space: "3 m", reach: "3 m", str: 8, dex: -2, natural: 2, damage: "1d8" },
+  Huge:       { label: "Enorme", mod: -2, space: "4,5 m", reach: "4,5 m", str: 16, dex: -4, natural: 4, damage: "2d6" },
+  Gargantuan: { label: "Imenso", mod: -4, space: "6 m", reach: "6 m", str: 24, dex: -6, natural: 6, damage: "3d6" },
+  Colossal:   { label: "Colossal", mod: -8, space: "9 m", reach: "9 m", str: 32, dex: -8, natural: 8, damage: "4d6" }
+};
+
+const TYPE_DATA = {
+  humanoid:     { label: "Humanoide", hd: 8, bab: "poor", saves: ["poor", "good", "poor"], conless: false },
+  animal:       { label: "Animal", hd: 8, bab: "good", saves: ["good", "good", "poor"], conless: false },
+  magicalBeast: { label: "Besta mágica", hd: 10, bab: "good", saves: ["good", "good", "poor"], conless: false },
+  dragon:       { label: "Dragão", hd: 12, bab: "good", saves: ["good", "good", "good"], conless: false },
+  undead:       { label: "Morto-vivo", hd: 12, bab: "poor", saves: ["poor", "poor", "good"], conless: true },
+  construct:    { label: "Constructo", hd: 10, bab: "good", saves: ["poor", "poor", "poor"], conless: true },
+  elemental:    { label: "Elemental", hd: 8, bab: "good", saves: ["good", "good", "poor"], conless: false },
+  plant:        { label: "Planta", hd: 8, bab: "poor", saves: ["good", "poor", "poor"], conless: false },
+  fey:          { label: "Fada", hd: 6, bab: "poor", saves: ["poor", "good", "good"], conless: false },
+  outsider:     { label: "Extra-planar", hd: 8, bab: "good", saves: ["good", "good", "good"], conless: false },
+  monstrous:    { label: "Monstruoso", hd: 8, bab: "good", saves: ["good", "good", "poor"], conless: false }
+};
+
+const RARITY_DATA = {
+  common: { label: "Comum", hd: 0 },
+  uncommon: { label: "Incomum", hd: 0 },
+  rare: { label: "Rara", hd: 1 },
+  mythic: { label: "Mítica rara", hd: 2 }
+};
+
+const COLOR_MODIFIERS = {
+  white: { label: "Branco", dex: 0, int: 0, wis: 2, cha: 0 },
+  blue: { label: "Azul", dex: 0, int: 2, wis: 0, cha: 0 },
+  black: { label: "Preto", dex: 0, int: 0, wis: 0, cha: 2 },
+  red: { label: "Vermelho", dex: 2, int: 0, wis: 0, cha: 0 },
+  green: { label: "Verde", dex: 0, int: 0, wis: 0, cha: 0 },
+  multicolor: { label: "Multicolorida", dex: 1, int: 1, wis: 1, cha: 1 },
+  colorless: { label: "Incolor", dex: 0, int: 0, wis: 0, cha: 0 }
+};
+
+function getValue(id) {
+  return document.getElementById(id).value;
+}
+function setText(id, value) {
+  document.getElementById(id).textContent = value;
+}
+function modifier(score) {
+  return Math.floor((score - 10) / 2);
+}
+function signed(value) {
+  return value >= 0 ? `+${value}` : `${value}`;
+}
+function formatNumber(value) {
+  return Math.max(0, Math.floor(value));
+}
+function abilityScoreFromPower(value) {
+  const table = [6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28];
+  return table[Math.min(value, table.length - 1)] + Math.max(0, value - 11) * 2;
+}
+function saveBase(progress, hd) {
+  if (progress === "good") return 2 + Math.floor(hd / 2);
+  return Math.floor(hd / 3);
+}
+function babBase(progress, hd) {
+  if (progress === "good") return hd;
+  if (progress === "average") return Math.floor(hd * 0.75);
+  return Math.floor(hd / 2);
+}
+function getNaturalArmor(toughness) {
+  if (toughness <= 1) return 0;
+  if (toughness <= 3) return 1;
+  if (toughness <= 5) return 2;
+  if (toughness <= 7) return 4;
+  if (toughness <= 9) return 6;
+  if (toughness <= 11) return 8;
+  return 10 + Math.floor((toughness - 12) / 2) * 2;
+}
+function estimateCR(hd, attackBonus, damagePerRound, ac, specialCount) {
+  const offense = Math.max(1, Math.ceil((attackBonus + damagePerRound / 4) / 2));
+  const defense = Math.max(1, Math.ceil((hd + ac / 5) / 2));
+  return Math.max(1, Math.round((offense + defense) / 2 + Math.min(3, specialCount * 0.25)));
+}
+function xpForCR(cr) {
+  const values = {
+    1: 300, 2: 600, 3: 900, 4: 1200, 5: 1600, 6: 2400,
+    7: 3200, 8: 4800, 9: 6400, 10: 9600, 11: 12800,
+    12: 19200, 13: 25600, 14: 38400, 15: 51200,
+    16: 76800, 17: 102400, 18: 153600, 19: 204800, 20: 307200
+  };
+  return values[cr] || "—";
+}
+function deriveSpecials(text) {
+  const source = text.toLowerCase();
+  const attacks = [];
+  const qualities = [];
+  const rules = [];
+
+  const mappings = [
+    { keys: ["voar", "flying"], label: "Voo", target: qualities, description: "A criatura possui deslocamento de voo." },
+    { keys: ["atropelar", "trample"], label: "Atropelar", target: attacks, description: "Pode atropelar adversários conforme as regras de D&D 3.5." },
+    { keys: ["toque mortífero", "deathtouch"], label: "Toque mortífero", target: attacks, description: "Seus ataques podem impor um efeito debilitante; defina a CD e a consequência conforme o ND." },
+    { keys: ["toque vampírico", "lifelink"], label: "Drenar vida", target: attacks, description: "Recupera pontos de vida de acordo com o dano causado." },
+    { keys: ["indestrutível", "indestructible"], label: "Indestrutível", target: qualities, description: "Possui proteção excepcional contra destruição; não equivale a imunidade universal." },
+    { keys: ["regeneração", "regenerate"], label: "Regeneração", target: qualities, description: "Recupera dano conforme uma taxa de regeneração definida pelo Mestre." },
+    { keys: ["resistência à magia", "protection from spells"], label: "Resistência à magia", target: qualities, description: "Possui Resistência à Magia; o valor deve ser ajustado ao ND." },
+    { keys: ["vigilância", "vigilance"], label: "Vigilância", target: qualities, description: "Mantém a capacidade de defesa mesmo quando ataca." },
+    { keys: ["ímpeto", "haste"], label: "Ímpeto", target: attacks, description: "Recebe uma capacidade de reação ou ataque acelerado, limitada pelo equilíbrio do encontro." },
+    { keys: ["infectar", "infect"], label: "Infectar", target: attacks, description: "Seus ataques podem transmitir veneno ou outro efeito debilitante." },
+    { keys: ["alcance", "reach"], label: "Alcance natural", target: qualities, description: "Pode atingir alvos além do alcance comum para seu tamanho." },
+    { keys: ["ameaçar", "menace"], label: "Ameaça", target: qualities, description: "É especialmente perigosa quando enfrenta alvos isolados." },
+    { keys: ["defensor", "defender"], label: "Defensor", target: qualities, description: "Não realiza ataques normais, mas recebe vantagens defensivas." },
+    { keys: ["lampejo", "flash"], label: "Reflexos rápidos", target: qualities, description: "Possui capacidade excepcional de reação." },
+    { keys: ["voar", "flying"], label: "Voo", target: qualities, description: "Possui deslocamento de voo." }
+  ];
+
+  mappings.forEach(item => {
+    if (item.keys.some(key => source.includes(key))) {
+      if (!qualities.includes(item.label) && !attacks.includes(item.label)) {
+        item.target.push(item.label);
+        rules.push(item.description);
+      }
+    }
+  });
+
+  if (source.includes("quando entra") || source.includes("entra no campo de batalha") || source.includes("enters the battlefield")) {
+    attacks.push("Efeito de entrada");
+    rules.push("Ao entrar em cena, ativa o efeito descrito na carta. Ajuste dano, alcance e resistência conforme o ND.");
+  }
+  if (source.includes("sempre que atacar") || source.includes("whenever") && source.includes("attack")) {
+    attacks.push("Efeito ao atacar");
+    rules.push("Ativa um efeito especial quando realiza um ataque, respeitando a frequência definida pelo Mestre.");
+  }
+  if (source.includes("marcador") || source.includes("counter")) {
+    qualities.push("Marcadores / evolução");
+    rules.push("Os marcadores foram interpretados como evolução ou modificadores acumuláveis. Defina duração e limite.");
+  }
+
+  if (!rules.length && text.trim()) {
+    rules.push("Texto original da carta registrado. Não foi identificada automaticamente uma palavra-chave conhecida; adapte o efeito manualmente.");
+  }
+  return { attacks, qualities, rules };
+}
+
+function generateStatBlock() {
+  const name = getValue("creatureName").trim() || "Criatura sem nome";
+  const power = Math.max(0, Number(getValue("power")) || 0);
+  const toughness = Math.max(0, Number(getValue("toughness")) || 0);
+  const mana = Math.max(0, Number(getValue("manaCost")) || 0);
+  const rarity = RARITY_DATA[getValue("rarity")];
+  const color = COLOR_MODIFIERS[getValue("colors")];
+  const type = TYPE_DATA[getValue("creatureType")];
+  const size = SIZE_DATA[getValue("size")];
+  const movement = getValue("movement");
+  const profile = getValue("profile");
+  const subtype = getValue("subtype").trim();
+  const alignment = getValue("alignment");
+  const cardText = getValue("cardAbilities").trim();
+
+  // Mana contributes a restrained HD adjustment; rarity adds a small exceptional-creature adjustment.
+  const manaHD = Math.min(3, Math.floor(mana / 4));
+  const hd = Math.max(1, power + toughness - 1 + rarity.hd + manaHD);
+
+  let str = abilityScoreFromPower(power) + size.str;
+  let con = abilityScoreFromPower(toughness);
+  let dex = 10 + color.dex + size.dex;
+  let int = 10 + color.int;
+  let wis = 10 + color.wis;
+  let cha = 10 + color.cha;
+
+  if (profile === "agile") { dex += 4; str -= 2; }
+  if (profile === "arcane") { int += 6; wis += 2; str -= 2; }
+  if (profile === "defensive") { con += 4; dex -= 2; }
+  if (profile === "spiritual") { wis += 4; cha += 2; }
+  if (getValue("creatureType") === "undead") { con = 10; }
+  if (getValue("creatureType") === "construct") { con = 10; int = Math.max(1, int); }
+  [str, con, dex, int, wis, cha] = [str, con, dex, int, wis, cha].map(value => Math.max(1, Math.min(40, value)));
+
+  const strMod = modifier(str);
+  const conMod = modifier(con);
+  const dexMod = modifier(dex);
+  const wisMod = modifier(wis);
+
+  const hpAbilityMod = type.conless ? (getValue("creatureType") === "undead" ? modifier(cha) : 0) : conMod;
+  const hp = Math.max(1, Math.floor(hd * (type.hd / 2 + 0.5 + hpAbilityMod)));
+  const naturalArmor = Math.max(0, getNaturalArmor(toughness) + size.natural);
+  const ac = 10 + dexMod + naturalArmor + size.mod;
+  const touchAC = 10 + dexMod + size.mod;
+  const flatAC = 10 + naturalArmor + size.mod;
+
+  const bab = babBase(type.bab, hd);
+  const grapple = bab + strMod + size.mod;
+  const attackBonus = bab + strMod + size.mod;
+  const baseDamage = size.damage;
+  const damageBonus = strMod;
+  const attackDamage = damageBonus === 0 ? baseDamage : `${baseDamage}${signed(damageBonus)}`;
+
+  const fort = saveBase(type.saves[0], hd) + (type.conless && getValue("creatureType") === "undead" ? modifier(cha) : conMod);
+  const reflex = saveBase(type.saves[1], hd) + dexMod;
+  const will = saveBase(type.saves[2], hd) + wisMod;
+
+  let speedParts = [];
+  if (movement === "ground" || movement === "multiple") speedParts.push("9 m");
+  if (movement === "fly" || movement === "multiple") speedParts.push("voo 18 m (média)");
+  if (movement === "swim" || movement === "multiple") speedParts.push("natação 9 m");
+  if (movement === "burrow" || movement === "multiple") speedParts.push("escavação 6 m");
+  if (movement === "climb" || movement === "multiple") speedParts.push("escalada 6 m");
+  const speed = speedParts.join(", ") || "9 m";
+
+  const specials = deriveSpecials(cardText);
+  if (movement === "fly" && !specials.qualities.includes("Voo")) {
+    specials.qualities.push("Voo");
+    specials.rules.push("Possui deslocamento de voo de 18 m (manobrabilidade média, valor inicial).");
+  }
+
+  const damageEstimate = Math.max(1, Math.floor((power + strMod + 2) / 2));
+  const cr = estimateCR(hd, attackBonus, damageEstimate, ac, specials.attacks.length + specials.qualities.length);
+  const xp = xpForCR(cr);
+
+  const abilityList = [
+    ["FOR", str], ["DES", dex], ["CON", con],
+    ["INT", int], ["SAB", wis], ["CAR", cha]
+  ];
+  document.getElementById("outAbilityScores").innerHTML = abilityList.map(([label, score]) =>
+    `<div class="ability"><b>${label}</b><span>${score}</span><small>${signed(modifier(score))}</small></div>`
+  ).join("");
+
+  setText("outName", name);
+  setText("outIdentity", `${type.label}${subtype ? ` (${subtype})` : ""} ${size.label}, ${alignment}`);
+  setText("outHD", `${hd}d${type.hd}`);
+  setText("outHP", `${hp} (estimativa)`);
+  setText("outInit", signed(dexMod));
+  setText("outSpeed", speed);
+  setText("outAC", `${ac} (toque ${touchAC}, desprevenido ${flatAC})`);
+  setText("outBAB", `${signed(bab)} / ${signed(grapple)}`);
+  setText("outAttacks", `Ataque natural: +${attackBonus} (${attackDamage})`);
+  setText("outSpace", `${size.space} / ${size.reach}`);
+  setText("outSpecialAttacks", specials.attacks.length ? specials.attacks.join(", ") : "—");
+  setText("outQualities", specials.qualities.length ? specials.qualities.join(", ") : "—");
+  setText("outSaves", `Fort +${fort}, Ref +${reflex}, Von +${will}`);
+  setText("outAbilities", `For ${str}, Des ${dex}, Con ${con}, Int ${int}, Sab ${wis}, Car ${cha}`);
+  setText("outCR", `${cr} (estimativa automática)`);
+  setText("outXP", xp);
+  setText("outType", type.label);
+  setText("outRarity", rarity.label);
+  setText("outMana", String(mana));
+  setText("outPT", `${power}/${toughness}`);
+  setText("outRules", specials.rules.length ? specials.rules.join(" ") : "Nenhuma habilidade especial identificada.");
+  setText("outNotes", `Base calculada com ${rarity.label.toLowerCase()}, custo ${mana} e ${hd} DV. O ND é apenas uma estimativa. Revise os valores contra as tabelas de criação de monstros de D&D 3.5 antes de usar em encontros importantes.`);
+
+  const imageUrl = getValue("imageUrl").trim();
+  const image = document.getElementById("outImage");
+  image.crossOrigin = "anonymous";
+  image.src = imageUrl || DEFAULT_IMAGE;
+  image.onerror = () => { image.src = DEFAULT_IMAGE; };
+
+  document.getElementById("status").textContent = "Ficha atualizada. Os valores são estimativas para servir como ponto de partida.";
+}
+
+async function waitForImage(image) {
+  if (image.complete && image.naturalWidth > 0) return;
+  await new Promise(resolve => {
+    image.onload = resolve;
+    image.onerror = resolve;
+  });
+}
+
+async function renderStatBlock() {
+  const block = document.getElementById("statBlock");
+  const image = document.getElementById("outImage");
+  await waitForImage(image);
+  if (typeof html2canvas !== "function") {
+    throw new Error("A biblioteca de exportação não foi carregada. Verifique sua conexão.");
+  }
+  return html2canvas(block, {
+    scale: 2,
+    backgroundColor: "#f4f0e7",
+    useCORS: true,
+    allowTaint: false,
+    logging: false
+  });
+}
+
+async function exportPNG() {
+  const button = document.getElementById("exportButton");
+  button.disabled = true;
+  try {
+    const canvas = await renderStatBlock();
+    const link = document.createElement("a");
+    link.download = `${safeFileName(getValue("creatureName")) || "creature"}-dnd35.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+    document.getElementById("status").textContent = "Imagem PNG exportada.";
+  } catch (error) {
+    document.getElementById("status").textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function safeFileName(value) {
+  return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+async function shareWhatsApp() {
+  const button = document.getElementById("shareButton");
+  button.disabled = true;
+  try {
+    const canvas = await renderStatBlock();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("Não foi possível criar a imagem.");
+
+    const file = new File([blob], `${safeFileName(getValue("creatureName")) || "creature"}-dnd35.png`, { type: "image/png" });
+    if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: getValue("creatureName"),
+        text: "Ficha de criatura para D&D 3.5"
+      });
+      document.getElementById("status").textContent = "Selecione o WhatsApp na janela de compartilhamento.";
+    } else {
+      const link = document.createElement("a");
+      link.download = file.name;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+      const message = encodeURIComponent(`Ficha de ${getValue("creatureName")} para D&D 3.5. A imagem foi baixada; anexe-a nesta conversa.`);
+      window.open(`https://wa.me/?text=${message}`, "_blank", "noopener");
+      document.getElementById("status").textContent = "Imagem baixada. Anexe o PNG manualmente na conversa do WhatsApp.";
+    }
+  } catch (error) {
+    if (error.name !== "AbortError") {
+      document.getElementById("status").textContent = error.message;
+    }
+  } finally {
+    button.disabled = false;
+  }
+}
+
+document.getElementById("creatureForm").addEventListener("submit", event => {
+  event.preventDefault();
+  generateStatBlock();
+});
+document.getElementById("exportButton").addEventListener("click", exportPNG);
+document.getElementById("shareButton").addEventListener("click", shareWhatsApp);
+document.getElementById("resetButton").addEventListener("click", () => {
+  document.getElementById("creatureForm").reset();
+  generateStatBlock();
+});
+
+generateStatBlock();
+</script>
+</body>
+</html>
